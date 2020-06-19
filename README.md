@@ -16,4 +16,5 @@ Go through the following steps to download your book.
 - `py downloader.py`
 - Paste the book url
 - The book gets saved into the downloads folder
+
 Info: It may take a little longer to download the first page.
