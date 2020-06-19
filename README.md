@@ -9,7 +9,8 @@ Go through the following steps to download your book.
 
 ### Getting the book url
 - Head to `https://digi4school.at/openlibrary` in your browser
-- Search a book
+- Search your book
+- Open the book
 - Copy its URL
 
 ### Actual book download
