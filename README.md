@@ -3,6 +3,7 @@ Downloads free accessible books from https://digi4school.at.
 
 ## Requirements
 - Python 3
+- `pip3 install cairosvg`
 
 ## Usage
 Go through the following steps to download your book.
