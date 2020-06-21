@@ -35,7 +35,10 @@ if hasattr(sys, 'frozen'):
 else:
     ROOT = Path(os.path.dirname(__file__))
 
-VERSION = __version__ = (ROOT / 'VERSION').read_text().strip()
+try:
+    VERSION = __version__ = (ROOT / 'VERSION').read_text().strip()
+except Exception:
+    VERSION = __version__ = '2.4.2'
 
 
 # VERSION is used in the "url" module imported by "surface"
