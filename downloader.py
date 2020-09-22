@@ -2,79 +2,133 @@ import requests
 from pathlib import Path
 from bs4 import BeautifulSoup
 from time import sleep
-import cairosvg_
+import cairosvgsession
+import getpass
+import json
+import os
 
-# get some options from the user
-print('')
-bookUrl = input('Paste your book url: ')
-startPageNo = int(input('Start downloading from page (default => 1): ') or 1)
-pageFileExtension = input('Choose a file extension for the pages: png/pdf/ps/svg (default => png): ') or 'png'
+def encode(key, string):
+    encoded_chars = []
+    for i in range(len(string)):
+        key_c = key[i % len(key)]
+        encoded_c = chr(ord(string[i]) + ord(key_c) % 256)
+        encoded_chars.append(encoded_c)
+    encoded_string = ''.join(encoded_chars)
+    return encoded_string
 
-# Starting message
-print('')
-print('>>> Starting book download...')
+def decode(key, string):
+    encoded_chars = []
+    for i in range(len(string)):
+        key_c = key[i % len(key)]
+        encoded_c = chr((ord(string[i]) - ord(key_c) + 256) % 256)
+        encoded_chars.append(encoded_c)
+    encoded_string = ''.join(encoded_chars)
+    return encoded_string
 
-# extract a valid bookId from the url
-bookIds = []
-for tile in bookUrl.split('/'):
-    try:
-        id = int(tile)
-        bookIds.append(id)
-    except ValueError:
-        pass
-if len(bookIds) == 0:
-    print("<<< Error: The book url you provided seems to be invalid.")
-    exit()
+def load_store():
+    filename = './store.json'
+    if os.path.isfile(filename):
+        return json.load(open('./store.json'))
+    else:
+        return {}
 
-# extrace the book suburl from the given ids
-bookSubUrl = ''
-for bookId in bookIds:
-   bookSubUrl += '/' + str(bookId)
+def save_store(store):
+    return json.dump(store, open('./store.json', 'w'))
 
-# setup an authorized session for the download (we need to make some requests here to get a valid token)
-try:
+def getFormData(html):
+    form = BeautifulSoup(html, features='lxml').findAll('form')[0]
+    formdata = {}
+    for field in form:
+        if (field.has_attr('name') and field.has_attr('value')):
+            formdata[field['name']] = field['value']
+    return formdata
+
+def downloadBook(book_url, login_email, login_password, start_page, file_ext):
+    # Extract valid book ids from the url
+    book_ids = []
+    for tile in book_url.split('/'):
+        try:
+            id = int(tile)
+            book_ids.append(id)
+        except ValueError:
+            pass
+    if len(book_ids) == 0:
+        return (None, 'The provided book url seems to be invalid.')
+    # Rebuild the book suburl from the given ids
+    book_sub_url = ''
+    for book_id in book_ids:
+        book_sub_url += '/' + str(book_id)
+
+    # Setup an authorized session to download the book (login)
     session = requests.Session()
-    def getFormData(html):
-        form = BeautifulSoup(html, features='lxml').findAll('form')[0]
-        formdata = {}
-        for field in form:
-            if (field.has_attr('name') and field.has_attr('value')):
-                formdata[field['name']] = field['value']
-        return formdata
-    r = session.get(f'https://digi4school.at/token/{bookIds[0]}')
-    r = session.post('https://kat.digi4school.at/lti', data=getFormData(r.content))
-    r = session.post('https://a.digi4school.at/lti', data=getFormData(r.content))
-except IndexError:
-    print("<<< Error: The book url you provided seems to be invalid.")
-    exit()
+    session.get('https://digi4school.at/')
+    response_text = session.post('https://digi4school.at/br/xhr/login', data={
+        'email': login_email,
+        'password': login_password
+    }).text
+    if 'KO' in response_text:
+        return (None, 'Invalid credentials.')
+    # Go through the rest of the shitty digi4school auth stuff
+    content = session.get(f'https://a.digi4school.at/ebook{book_sub_url}/').content
+    content = session.post('https://kat.digi4school.at/lti', data=getFormData(content)).content
+    session.post('https://a.digi4school.at/lti', data=getFormData(content))
 
-# mkdir a directory for the book
-if len(bookIds) == 1:
-    bookDir = f'./downloads/book-{bookIds[0]}/'
-elif len(bookIds) == 2:
-    bookDir = f'./downloads/archive-{bookIds[0]}/book-{bookIds[1]}/'
-else:
-    bookDir = f'./downloads{bookSubUrl}/'
-Path(bookDir).mkdir(parents=True, exist_ok=True)
+    # Make a dir for the book
+    book_dir = f'./downloads{book_sub_url}/'
+    Path(book_dir).mkdir(parents=True, exist_ok=True)
 
-# go on and keep downloading the pages ´til there's a 404
-pageNo = startPageNo
-while True:
-    # download the page, convert it to the given file extension
-    pageSvgUrl = f'https://a.digi4school.at/ebook{bookSubUrl}/{pageNo}/{pageNo}.svg'
-    fileSavePath = f'./{bookDir}/page-{pageNo}.{pageFileExtension}'
-    try:
-        if pageFileExtension in cairosvg_.svg2:
-            cairosvg_.svg2[pageFileExtension](url=pageSvgUrl, write_to=fileSavePath, session=session, fillBG=True)
-            print(f'Downloaded page {pageNo}.')
-            pageNo += 1
-        else:
-            print("<<< Error: Please enter a valid file extension.")
-            exit()
-            break
-    except cairosvg_.exceptions.NotFoundException:
-        # 404 -> we're done
-        break
+    # Keep downloading pages til there's a 404
+    page_no = start_page
+    found_404 = False
+    while not found_404:
+        # download the page, convert it to the given file extension
+        page_svg_url = f'https://a.digi4school.at/ebook{book_sub_url}/{page_no}/{page_no}.svg'
+        save_file_path = f'./{book_dir}/page-{page_no}.{file_ext}'
+        try:
+            if file_ext in cairosvgsession.svg2:
+                cairosvgsession.svg2[file_ext](url=page_svg_url, write_to=save_file_path, session=session, fillBG=True)
+                print(f'Downloaded page {page_no}.')
+                page_no += 1
+            else:
+                return (None, 'Please enter a valid file extension.')
+        except cairosvgsession.exceptions.NotFoundException:
+            # 404 -> we're done
+            found_404 = True
 
-# Done message
-print(f'<<< Downloaded {pageNo - startPageNo} pages.')
+    # Return success message
+    return (f'Downloaded {page_no - start_page} pages.', None)
+
+PW_KEY = 'vi4#4/ME/ZaMGP;y'
+
+def main():
+    # Get some options from the user
+    print('')
+    store = load_store()
+    def inp(msg, key, default=''):
+        prompt = msg + (f' ({store[key]})' if key in store else f' ({default})' if default != '' else '') + ': '
+        return input(prompt) or (store[key] if key in store else default)
+    book_url = inp('Paste your book url', 'book_url')
+    login_email = inp('Enter your digi4school email adress', 'login_email')
+    prompt = 'Enter your password' + (' (use last)' if 'login_password' in store else '') + ': '
+    login_password = getpass.getpass(prompt) or (decode(PW_KEY, store['login_password']) if 'login_password' in store else '')
+    start_page = int(input('Start downloading from page (1): ') or 1)
+    file_ext = inp('Choose a file extension for the pages: png/pdf/ps/svg', 'file_ext', 'png')
+    save_store({
+        'login_email': login_email,
+        'login_password': encode(PW_KEY, login_password),
+        'file_ext': file_ext
+    })
+
+    # Start the download
+    print('')
+    print('>>> Starting book download...')
+
+    (success, error) = downloadBook(book_url, login_email, login_password, start_page, file_ext)
+
+    # Print error messages
+    if error != None:
+        print(f'<<< Error: {error}')
+    elif success != None:
+        print(f'<<< {success}')
+
+main()
