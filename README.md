@@ -31,7 +31,7 @@ Then go through the following steps to download your book.
 
 ### Actual book download
 - `py downloader.py`
-- Paste the book url
+- Paste the book url (or multiple urls seperated by a semicolon)
 - Enter the credentials to your digi4school account
 - Customize a few options
 - The book gets downloaded and saved into a folder named 'downloads'

@@ -101,13 +101,13 @@ def downloadBook(book_url, login_email, login_password, start_page, file_ext):
 PW_KEY = 'vi4#4/ME/ZaMGP;y'
 
 def main():
-    # Get some options from the user
+    # Some crappy code to let the user adjust some settings
     print('')
     store = load_store()
     def inp(msg, key, default=''):
         prompt = msg + (f' ({store[key]})' if key in store else f' ({default})' if default != '' else '') + ': '
         return input(prompt) or (store[key] if key in store else default)
-    book_url = inp('Paste your book url', 'book_url')
+    book_urls = inp('Paste your book url', 'book_urls').split(';')
     login_email = inp('Enter your digi4school email adress', 'login_email')
     prompt = 'Enter your password' + (' (use last)' if 'login_password' in store else '') + ': '
     login_password = getpass.getpass(prompt) or (decode(PW_KEY, store['login_password']) if 'login_password' in store else '')
@@ -119,16 +119,17 @@ def main():
         'file_ext': file_ext
     })
 
-    # Start the download
-    print('')
-    print('>>> Starting book download...')
+    # Start downloading the books
+    for book_url in book_urls:
+        print('')
+        print(f'>>> Downloading book: {book_url}')
 
-    (success, error) = downloadBook(book_url, login_email, login_password, start_page, file_ext)
+        (success, error) = downloadBook(book_url, login_email, login_password, start_page, file_ext)
 
-    # Print error messages
-    if error != None:
-        print(f'<<< Error: {error}')
-    elif success != None:
-        print(f'<<< {success}')
+        # Print error messages
+        if error != None:
+            print(f'<<< Error: {error}')
+        elif success != None:
+            print(f'<<< {success}')
 
 main()
