@@ -86,7 +86,9 @@ def downloadBook(book_url, login_email, login_password, start_page, file_ext):
         save_file_path = f'{book_dir}page-{page_no}.{file_ext}'
         try:
             if file_ext in cairosvgsession.svg2:
-                cairosvgsession.svg2[file_ext](url=page_svg_url, write_to=save_file_path, session=session, fillBG=True)
+                save_file_content = cairosvgsession.svg2[file_ext](url=page_svg_url, session=session, fillBG=True)
+                with open(save_file_path, 'wb+') as f:
+                    f.write(save_file_content)
                 print(f'Downloaded page {page_no}.')
                 page_no += 1
             else:

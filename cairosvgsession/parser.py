@@ -362,7 +362,8 @@ class Tree(Node):
         file_obj = kwargs.get('file_obj')
         url = kwargs.get('url')
         session = kwargs.get('session')
-        fillBG = kwargs.get('fillBG') and kwargs.get('isRoot', False)
+        self.isRoot = kwargs.get('isRoot', False)
+        fillBG = kwargs.get('fillBG') and self.isRoot
         self.session = session
         unsafe = kwargs.get('unsafe')
         parent = kwargs.get('parent')
@@ -406,6 +407,8 @@ class Tree(Node):
             if not bytestring:
                 bytestring = self.fetch_url(
                     parse_url(self.url), 'image/svg+xml', session=session, fillBG=fillBG)
+                if self.isRoot and b'viewBox' not in bytestring[0:500]:
+                    bytestring = bytestring.replace(b'<svg', b'<svg viewBox="0 0 909 1286"', 1)
             if len(bytestring) >= 2 and bytestring[:2] == b'\x1f\x8b':
                 bytestring = gzip.decompress(bytestring)
             parser = ET.XMLParser(recover=unsafe)
