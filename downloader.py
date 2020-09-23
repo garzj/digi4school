@@ -83,7 +83,7 @@ def downloadBook(book_url, login_email, login_password, start_page, file_ext):
     while not found_404:
         # download the page, convert it to the given file extension
         page_svg_url = f'https://a.digi4school.at/ebook{book_sub_url}/{page_no}/{page_no}.svg'
-        save_file_path = f'./{book_dir}/page-{page_no}.{file_ext}'
+        save_file_path = f'{book_dir}page-{page_no}.{file_ext}'
         try:
             if file_ext in cairosvgsession.svg2:
                 cairosvgsession.svg2[file_ext](url=page_svg_url, write_to=save_file_path, session=session, fillBG=True)
