@@ -21,3 +21,7 @@ Download your books from https://digi4school.at!
 - Right click it and choose 'Copy link address'
 
 **Important:** You'll need the url that leads to the book, not the url of the opened book itself.
+
+## Disclaimer
+
+This program is only for educational purposes, downloading books like that is illegal.
