@@ -83,6 +83,8 @@ def downloadBook(book_url, login_email, login_password, start_page, file_ext):
     print('Loading book...')
     req = session.get(book_url)
     formdata = getFormData(req.content)
+    if 'login' in formdata['action']:
+        return (None, 'Authentication failed!')
     req = session.post(formdata['action'], data=formdata['fields'])
     formdata = getFormData(req.content)
     req = session.post(formdata['action'], data=formdata['fields'])
