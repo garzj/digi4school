@@ -192,6 +192,7 @@ def main():
             if input('Do you wanna download another book (y/n): ') != 'y':
                 break
     except KeyboardInterrupt:
+        print('')
         pass
 
 main()
