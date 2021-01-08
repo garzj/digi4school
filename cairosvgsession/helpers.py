@@ -115,6 +115,7 @@ def point_angle(cx, cy, px, py):
 
 def preserve_ratio(surface, node, width=None, height=None):
     """Manage the ratio preservation."""
+    viewbox_width, viewbox_height = node.image_width, node.image_height
     if node.tag == 'marker':
         width = width or size(surface, node.get('markerWidth', '3'), 'x')
         height = height or size(surface, node.get('markerHeight', '3'), 'y')
@@ -124,7 +125,6 @@ def preserve_ratio(surface, node, width=None, height=None):
         node_width, node_height, _ = node_format(surface, node)
         width = width or node_width
         height = height or node_height
-        viewbox_width, viewbox_height = node.image_width, node.image_height
 
     translate_x = 0
     translate_y = 0

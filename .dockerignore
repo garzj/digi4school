@@ -1,5 +1,8 @@
-# User data
+# Volumes
 data/
+
+# Git
+.gitignore
 
 # Development
 run.bat
