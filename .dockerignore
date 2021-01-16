@@ -4,8 +4,8 @@ data/
 # Git
 .gitignore
 
-# Development
-run.bat
+# Dev files
+**/*.dev.*
 
 # IDE
 .vscode/
