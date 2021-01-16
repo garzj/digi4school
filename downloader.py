@@ -114,12 +114,43 @@ def downloadBook(book_url, login_email, login_password, start_page, file_ext):
     elif 'digi4school.at' in req.url:
         if b'Error 911' in req.content or b'Fehler 911' in req.content:
             return (None, 'The book is already opened in another browser.')
-        elif not b'IDRViewer' in req.content:
-            return (None, 'The provided url leads to an archive.')
         else:
             # Extract the book id from the url
             book_id = re.findall(r'https?:\/\/a\.digi4school\.at\/ebook\/([0-9]+(\/[0-9]+)?).*', req.url)[0][0]
-            
+
+            # Handle archives
+            if not b'IDRViewer' in req.content:
+                print('')
+                print('Archive detected:')
+                books = bs4.BeautifulSoup(req.content, features='lxml').find_all('a', { 'href': re.compile(r'(\.\/)?[0-9]+\/index.html') })
+                book_count = len(books)
+
+                # Select a book
+                if book_count == 0:
+                    return (None, 'Could not find any books inside this archive!')
+                elif book_count == 1:
+                    book = books[0]
+                    title = book.find('h1').find(text=True)
+                    print(f'Selected book "{title}".')
+                else:
+                    # Let the user choose if there are multiple ones
+                    for i in range(book_count):
+                        title = books[i].find('h1').find(text=True)
+                        print(f'[{i}] {title}')
+                    selection = input(f'Select a book (0 - {book_count - 1}): ')
+                    try:
+                        selection = int(selection)
+                    except ValueError:
+                        return (None, 'Invalid selection.')
+                    if selection < 0 or selection >= book_count:
+                        return (None, 'Invalid selection.')
+                    book = books[selection]
+                print('')
+
+                # Adjust the book_id accordingly
+                sub_id = re.sub(r'^\/?(\w*)(.*)$', '\\1', book['href'])
+                book_id += f'/{sub_id}'
+
             # Make a dir for the book
             book_dir = create_book_dir(book_id)
             
