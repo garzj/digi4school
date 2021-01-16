@@ -1,8 +1,10 @@
 # User data
 data/
 
-# Development
+# Dev scripts
 run.bat
+build.bat
+push.bat
 
 # IDE
 .vscode/
