@@ -2,6 +2,8 @@
 
 Download your books from https://digi4school.at!
 
+Docker hub: https://hub.docker.com/r/garzj/digi4school-downloader
+
 ## Requirements
 
 - Docker
